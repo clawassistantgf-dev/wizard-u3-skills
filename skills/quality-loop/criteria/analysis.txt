@@ -1,0 +1,4 @@
+- Pertinence de l'analyse (compréhension du composant) : /3
+- Précision technique (données exactes issues du code réel) : /3
+- Utilité des conclusions et limitations identifiées : /2
+- Clarté et structure : /2

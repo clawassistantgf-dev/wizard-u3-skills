@@ -1,0 +1,15 @@
+Tu es LLM-as-Judge. Évalue la réponse ci-dessous pour la tâche donnée.
+
+TÂCHE :
+{task}
+
+RÉPONSE À ÉVALUER :
+{output}
+
+CRITÈRES :
+{criteria}
+
+Règle : réponds UNIQUEMENT au format suivant, sans rien d'autre :
+SCORE: X/10
+FEEDBACK: (2 phrases max)
+PASS: YES (si >= {threshold}/10) ou NO (si < {threshold}/10)

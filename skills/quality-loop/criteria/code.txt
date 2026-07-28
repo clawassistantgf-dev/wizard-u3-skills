@@ -1,0 +1,4 @@
+- Correction mathématique (formules justes, convergence correcte) : /3
+- Récursivité bien implémentée (cas de base, accumulateur, pas de boucle) : /3
+- Code exécutable (tourne sans erreur, assertions passent) : /2
+- Exemples, tests et clarté : /2
