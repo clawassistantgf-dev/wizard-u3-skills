@@ -157,11 +157,11 @@ def main():
     smtp_pass = get_cred("EMAIL_PASSWORD")
 
     # Destinataires
-    to_addrs = ["nftgang1618@gmail.com", "dorian.espagne@gmail.com"]
-    cc_addrs = ["galoisfield2718@gmail.com"]
+    to_addrs = ["destinataire@exemple.com"]
+    cc_addrs = ["copie@exemple.com"]
     all_recipients = to_addrs + cc_addrs
 
-    subject = "Automatisation des taches repetitives par Workflow Agent & Harnais agentique"
+    subject = "Automatisation des taches repetitives par Workflow Agent"
 
     # Contenu markdown
     md_content = """# Automatisation des taches repetitives par Workflow Agent & Harnais agentique
