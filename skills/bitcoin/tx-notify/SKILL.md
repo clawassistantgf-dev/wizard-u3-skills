@@ -18,6 +18,18 @@ triggers:
 
 # tx-notify — Bitcoin Transaction Watcher
 
+## CLI Wrapper
+
+```bash
+# Installé dans le PATH
+txnotify <txid>              # check unique
+txnotify --watch <txid>       # poll 10s infini
+txnotify --watch -i 30 <txid> # poll 30s
+txnotify -h                   # help
+```
+
+Le wrapper est dans `~/.local/bin/txnotify`.
+
 ## Description
 
 Surveille une transaction Bitcoin via **mempool.space** (ou toute instance mempool compatible) et notifie sur Telegram dès confirmation.

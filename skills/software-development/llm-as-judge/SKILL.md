@@ -99,6 +99,86 @@ Le `goal` de delegate_task est une instruction courte : "Évalue selon les crit�
 
 **Important :** le format `SCORE: X/10, FEEDBACK: ..., PASS: YES/NO` est parsable par regex ou parsing simple, ce qui permet d'automatiser la boucle avec execute_code si besoin.
 
+## Orchestrateur autonome (quality-loop.py)
+
+Pour automatiser la boucle complète, un script Python lit la config, les critères et le prompt juge depuis des fichiers, et orchestre production → jugement → itération.
+
+### Architecture fichiers
+
+```
+~/.hermes/skills/quality-loop/
+├── config.yaml              ← Seuil, rounds max, options
+├── criteria/
+│   ├── poetry.txt           ← Critères pour textes créatifs
+│   ├── code.txt             ← Critères pour code Python
+│   ├── analysis.txt         ← Critères pour analyses techniques
+│   └── general.txt          ← Critères pour explications générales
+├── prompts/
+│   └── judge_default.txt    ← Template juge (variables: {task} {output} {criteria} {threshold})
+└── SKILL.md
+```
+
+**Principe :** le script ne contient AUCUNE indication contextuelle. Tout est dans les fichiers `.txt` et `.yaml`. Le fichier de critères et le prompt du juge sont modifiables sans toucher au script.
+
+### Usage
+
+```bash
+python3 ~/.hermes/scripts/quality-loop.py \
+  --task "Ta tâche ici" \
+  --criteria poetry|code|analysis|general \
+  [--max-rounds 5] \
+  [--threshold 8]
+```
+
+### Ce que fait le script
+
+1. Charge `config.yaml` (seuil, rounds max, injection feedback)
+2. Charge le fichier critères (ex: `criteria/poetry.txt`)
+3. Charge le template juge (`prompts/judge_default.txt`)
+4. Pour chaque round (1 à max_rounds) :
+   - **Produit** : appelle `hermes chat -q <task>` (avec feedback du round précédent si injecté)
+   - **Juge** : appelle `hermes chat -q <prompt_rempli>` avec output + critères
+   - **Parse** : extrait SCORE, FEEDBACK, PASS de la réponse du juge (regex)
+   - **Décide** : si PASS=YES, demande à l'agent de confirmer "FINI" → sortie. Sinon, round suivant avec le feedback injecté dans le prompt
+5. Journalise chaque round dans `~/.hermes/quality-loop-logs.jsonl`
+6. Produit un rapport markdown dans `~/.hermes/quality-loop-report.md`
+
+### Appel autonome par l'agent
+
+```python
+terminal(command="""
+python3 ~/.hermes/scripts/quality-loop.py \\
+  --task "Explique le concept de protocole selon Protocolized" \\
+  --criteria general \\
+  --max-rounds 5 \\
+  --threshold 8
+""", timeout=300, background=True, notify_on_complete=True)
+```
+
+Le rapport (stdout + fichier) arrive dans le chat utilisateur automatiquement.
+
+### Résultats de la session de prototypage (Juillet 2026)
+
+| Test | Tâche | Scores | Rounds | Verdict |
+|------|-------|--------|--------|---------|
+| 1 | Poème Bitcoin (style épique, 14 vers) | **9.5/10** | 1 | ✅ PASS direct |
+| 2 | Fonctions récursives π + exponentielle | **10/10** | 1 | ✅ PASS direct |
+| 3 | Analyse code Hermes (IterationBudget) | **10/10** | 1 | ✅ PASS direct |
+| 4 | Fibonacci Binet (tâche complexe) | **7→9/10** | 2 | ✅ Boucle qualité active |
+
+Le test 4 prouve la boucle d'amélioration : round 1 à 7/10 (feedback du juge sur précision manquante, pas de version récursive), round 2 à 9/10 avec Decimal, version récursive, et tests comparatifs. **Amélioration de +2 points en 1 itération.**
+
+### Pitfalls du script orchestrateur
+
+- **`hermes chat -q`** n'est pas disponible si la session Hermes n'a pas de binaire CLI accessible. Dans ce cas, utiliser `delegate_task` à la place.
+- **Timeout** : 60s par défaut pour chaque appel Hermes. Pour des tâches longues, augmenter avec un paramètre.
+- **`pyyaml`** requis pour lire `config.yaml`. Installer avec `pip3 install --break-system-packages pyyaml`.
+- **Critères inadaptés** : si le juge donne un score faible à cause de critères qui ne correspondent pas à la tâche (ex: `code` pour un texte), le problème est dans le fichier critères, pas dans le script. Choisir le bon fichier ou le modifier.
+
+### Nommer avant de construire
+
+Leçon de la session Protocolized : la plus grande valeur d'un framework conceptuel est souvent dans sa **taxonomie** — les noms qu'il donne aux phénomènes — pas dans son implémentation. Avant de construire un outil quality-loop, le travail de nommer les critères, les états (PASS/FAIL), et les métriques (SCORE/10) EST le premier acte de construction. La boucle qualité n'a fonctionné que parce que le juge et l'agent partageaient un vocabulaire commun (SCORE, FEEDBACK, PASS, round). Le nommer précède et conditionne le faire.
+
 ## Pitfalls
 
 - **Judge sans output** : si le contexte ne contient pas l'output à juger, le judge répond "je ne vois pas l'output". Toujours inclure l'output complet dans le context, pas seulement la tâche.

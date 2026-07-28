@@ -1,11 +1,9 @@
-# Ignore EVERYTHING except skills, scripts, and this file
+# Ignore tout sauf ce qui est explicitement forcé avec git add -f
 /*
-!/skills
 !/scripts
 !/.gitignore
+!README.md
 
-# Mais ignore les caches et fichiers inutiles dans skills
-skills/**/__pycache__
-scripts/__pycache__
+**/__pycache__
 *.pyc
 .DS_Store
